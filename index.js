@@ -261,10 +261,71 @@ const many1 = (parser) =>
     return updateParserResult(nextState, results);
   });
 
+const sepBy = (separatorParser) => (valueParser) =>
+  new Parser((parserState) => {
+    const results = [];
+    let nextState = parserState;
+
+    while (true) {
+      const thingWeWantState = valueParser.parserStateTransformerFn(nextState);
+      if (thingWeWantState.isError) {
+        break;
+      }
+      results.push(thingWeWantState.result);
+      nextState = thingWeWantState;
+
+      const separatorState =
+        separatorParser.parserStateTransformerFn(nextState);
+      if (separatorState.isError) {
+        break;
+      }
+      nextState = separatorState;
+    }
+
+    return updateParserResult(nextState, results);
+  });
+
+const sepBy1 = (separatorParser) => (valueParser) =>
+  new Parser((parserState) => {
+    const results = [];
+    let nextState = parserState;
+
+    while (true) {
+      const thingWeWantState = valueParser.parserStateTransformerFn(nextState);
+      if (thingWeWantState.isError) {
+        break;
+      }
+      results.push(thingWeWantState.result);
+      nextState = thingWeWantState;
+
+      const separatorState =
+        separatorParser.parserStateTransformerFn(nextState);
+      if (separatorState.isError) {
+        break;
+      }
+      nextState = separatorState;
+    }
+
+    if (results.length === 0) {
+      return updateParserError(
+        parserState,
+        `sepBy1: Unable to capture any results at index ${parserState.index}`
+      );
+    }
+
+    return updateParserResult(nextState, results);
+  });
+
 const between = (leftParser, rightParser) => (contentParser) =>
   sequenceOf([leftParser, contentParser, rightParser]).map(
     (results) => results[1]
   );
+
+const lazy = (parserThunk) =>
+  new Parser((parserState) => {
+    const parser = parserThunk();
+    return parser.parserStateTransformerFn(parserState);
+  });
 
 // and how we use it
 
@@ -286,7 +347,7 @@ const dicerollParser = sequenceOf([digits, str("d"), digits]).map(
   })
 );
 
-console.log("diceroll result", dicerollParser.run("4d3"));
+// console.log("diceroll result", dicerollParser.run("4d3"));
 
 const parser = sequenceOf([letters, str(":")])
   .map((results) => results[0])
@@ -309,3 +370,38 @@ const parser2 = sequenceOf([str("hello there"), str(" "), digits]);
 const betweenBrackets = between(str("("), str(")"));
 const parser3 = betweenBrackets(letters);
 // console.log("parser", parser3.run("(hello)"));
+
+/** Episode 5 */
+const exampleString = "[1,[2,[3],4],5]";
+const betweenSquareBrackets = between(str("["), str("]"));
+
+const commaSeparated = sepBy(str(","));
+
+const parser5 = betweenSquareBrackets(commaSeparated(digits));
+console.log("episode 5 ", parser5.run("[1,2,4]"));
+
+// this is why we need lazy evaluation, array parser is not defined , it's used before initialization
+// this happen beacuase JS is eager evalutation and not lazy evaluation
+/*
+const value = choice([digits, arrayParser]);
+const arrayParser = betweenSquareBrackets(commaSeparated(value));
+*/
+
+//solution to value is used before initialization
+const value = lazy(() => choice([digits, arrayParser]));
+const arrayParser = betweenSquareBrackets(commaSeparated(value));
+console.log("array parser", arrayParser.run("[1,2,3,[4,[5],6],7]"));
+
+export {
+  str,
+  letters,
+  digits,
+  sequenceOf,
+  choice,
+  many,
+  many1,
+  sepBy,
+  sepBy1,
+  between,
+  lazy,
+};
