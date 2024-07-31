@@ -1,5 +1,5 @@
 // library that showcase how a parser combinator can be used to parser a DSL like JSX
-// This double parsing is how JSX is "transpiled" into React code
+// This work by creating two AST, one AST to understand the JSX code and another AST to create React element
 // or how Typescript is "transpiled" into Javascript code
 // or how SASS extend CSS
 // or for refactorizing proccess  Código fuente → AST → AST modificado → Código fuente refactorizado
