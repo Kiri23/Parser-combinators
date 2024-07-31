@@ -3,7 +3,7 @@
 // or how Typescript is "transpiled" into Javascript code
 // or how SASS extend CSS
 // or for refactorizing proccess  Código fuente → AST → AST modificado → Código fuente refactorizado
-// or templating languaes
+// or templating languaes - the template language -> AST of template language -> AST of HTML -> function factory for HTML elements
 import {
   char,
   choice,
