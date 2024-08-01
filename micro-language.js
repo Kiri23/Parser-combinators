@@ -31,6 +31,7 @@ const operationParser = betweenBrackets(
   },
 }));
 
+// Tree walk intepreter algorithm
 const evaluate = (node) => {
   if (node.type === "number") {
     return node.value;
@@ -53,6 +54,7 @@ const evaluate = (node) => {
   }
 };
 
+// Tree walk intepreter algorithm
 const validate = (ast) => {
   if (ast.type === "number") {
     if (!Number.isFinite(ast.value)) {
