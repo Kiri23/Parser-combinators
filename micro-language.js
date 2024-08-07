@@ -7,7 +7,7 @@
   Nest calculations: (+ (* 10 2) (- (/ 50 3) 2))
 */
 
-import { digits, str, choice, sequenceOf, between, lazy } from "./index.js";
+import { digits, str, choice, sequenceOf, between, lazy } from "./lib.js";
 
 const betweenBrackets = between(str("("), str(")"));
 
