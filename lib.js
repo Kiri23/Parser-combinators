@@ -21,23 +21,19 @@ class Parser {
     this.description = desc;
   }
 
-  run(targetString) {
+  run(target) {
     const initialState = {
-      targetString,
+      target,
       index: 0,
       result: null,
       isError: false,
       error: null,
     };
-
-    console.log("class run", this.description);
     return this.parserStateTransformerFn(initialState);
   }
 
   map(fn) {
-    console.log("construyendo map");
     return new Parser((parserState) => {
-      console.log("map", this.description);
       const nextState = this.parserStateTransformerFn(parserState);
 
       if (nextState.isError) return nextState;
@@ -71,13 +67,13 @@ class Parser {
 
 const str = (s) => {
   return new Parser((parserState) => {
-    const { targetString, index, isError } = parserState;
+    const { target, index, isError } = parserState;
 
     if (isError) {
       return parserState;
     }
 
-    const slicedTarget = targetString.slice(index);
+    const slicedTarget = target.slice(index);
 
     if (slicedTarget.length === 0) {
       return updateParserError(
@@ -92,10 +88,7 @@ const str = (s) => {
 
     return updateParserError(
       parserState,
-      `str: Tried to match "${s}", but got "${targetString.slice(
-        index,
-        index + 10
-      )}"`
+      `str: Tried to match "${s}", but got "${target.slice(index, index + 10)}"`
     );
   }, "str desc");
 };
@@ -103,13 +96,13 @@ const str = (s) => {
 const lettersRegex = /^[A-Za-z]+/;
 const letters = new Parser((parserState) => {
   console.log("letter");
-  const { targetString, index, isError } = parserState;
+  const { target, index, isError } = parserState;
 
   if (isError) {
     return parserState;
   }
 
-  const slicedTarget = targetString.slice(index);
+  const slicedTarget = target.slice(index);
 
   if (slicedTarget.length === 0) {
     return updateParserError(
@@ -136,13 +129,13 @@ const letters = new Parser((parserState) => {
 
 const digitsRegex = /^[0-9]+/;
 const digits = new Parser((parserState) => {
-  const { targetString, index, isError } = parserState;
+  const { target, index, isError } = parserState;
 
   if (isError) {
     return parserState;
   }
 
-  const slicedTarget = targetString.slice(index);
+  const slicedTarget = target.slice(index);
 
   if (slicedTarget.length === 0) {
     return updateParserError(
@@ -168,7 +161,6 @@ const digits = new Parser((parserState) => {
 }, "digit desc");
 
 const sequenceOf = (parsers) => {
-  console.log("construyendo seuqnece of");
   return new Parser((parserState) => {
     if (parserState.isError) {
       return parserState;
@@ -178,12 +170,13 @@ const sequenceOf = (parsers) => {
     let nextState = parserState;
 
     for (let p of parsers) {
-      console.log("p", p.description);
       nextState = p.parserStateTransformerFn(nextState);
 
       results.push(nextState.result);
     }
-    console.log("devuelta los resultados", results);
+    if (nextState.isError) {
+      return nextState;
+    }
 
     return updateParserResult(nextState, results);
   }, "sequenceOf");
@@ -263,6 +256,10 @@ const many1 = (parser) =>
 
 const sepBy = (separatorParser) => (valueParser) =>
   new Parser((parserState) => {
+    if (parserState.isError) {
+      return parserState;
+    }
+
     const results = [];
     let nextState = parserState;
 
@@ -287,6 +284,10 @@ const sepBy = (separatorParser) => (valueParser) =>
 
 const sepBy1 = (separatorParser) => (valueParser) =>
   new Parser((parserState) => {
+    if (parserState.isError) {
+      return parserState;
+    }
+
     const results = [];
     let nextState = parserState;
 
@@ -327,75 +328,13 @@ const lazy = (parserThunk) =>
     return parser.parserStateTransformerFn(parserState);
   });
 
-// and how we use it
 
-// episode 4 , introducing chain
-const stringParser = letters.map((result) => ({
-  type: "string",
-  value: result,
-}));
-
-const numberParser = digits.map((result) => ({
-  type: "number",
-  value: Number(result),
-}));
-
-const dicerollParser = sequenceOf([digits, str("d"), digits]).map(
-  ([n, _, s]) => ({
-    type: "diceroll",
-    value: [Number(n), Number(s)],
-  })
-);
-
-// console.log("diceroll result", dicerollParser.run("4d3"));
-
-const parser = sequenceOf([letters, str(":")])
-  .map((results) => results[0])
-  .chain((type) => {
-    if (type === "string") {
-      return stringParser;
-    } else if (type === "number") {
-      return numberParser;
-    }
-    return dicerollParser;
-  });
-
-// console.log("result", parser.run("diceroll:4d3"));
-
-// episode 2
-const parser2 = sequenceOf([str("hello there"), str(" "), digits]);
-// console.log("parser", parser2.run("hello there 456"));
-
-// betwen
-const betweenBrackets = between(str("("), str(")"));
-const parser3 = betweenBrackets(letters);
-// console.log("parser", parser3.run("(hello)"));
-
-/** Episode 5 */
-const exampleString = "[1,[2,[3],4],5]";
-const betweenSquareBrackets = between(str("["), str("]"));
-
-const commaSeparated = sepBy(str(","));
-
-const parser5 = betweenSquareBrackets(commaSeparated(digits));
-console.log("episode 5 ", parser5.run("[1,2,4]"));
-
-// this is why we need lazy evaluation, array parser is not defined , it's used before initialization
-// this happen beacuase JS is eager evalutation and not lazy evaluation
-/*
-const value = choice([digits, arrayParser]);
-const arrayParser = betweenSquareBrackets(commaSeparated(value));
-*/
-
-//solution to value is used before initialization
-const value = lazy(() => choice([digits, arrayParser]));
-const arrayParser = betweenSquareBrackets(commaSeparated(value));
-console.log("array parser", arrayParser.run("[1,2,3,[4,[5],6],7]"));
 
 export {
-  str,
+  Parser,
   letters,
   digits,
+  str,
   sequenceOf,
   choice,
   many,
@@ -404,4 +343,7 @@ export {
   sepBy1,
   between,
   lazy,
+  updateParserError,
+  updateParserResult,
+  updateParserState,
 };

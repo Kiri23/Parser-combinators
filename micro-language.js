@@ -39,7 +39,6 @@ const evaluate = (node) => {
 
   if (node.type === "operation") {
     if (node.value.op === "+") {
-      console.log("node a", node.value.a);
       return evaluate(node.value.a) + evaluate(node.value.b);
     }
     if (node.value.op === "-") {
@@ -89,5 +88,7 @@ const interpreter = (program) => {
 // const program = "(+ (* 10 2) (- (/ 50 3) 2))";
 const program = "(+ 10 2)";
 
-console.log(interpreter(program));
-console.log(interpreter("(/ 10 (- 3 3))")); // Should throw: Division by zero
+console.log("program", program);
+console.log("interpreter language", interpreter(program));
+console.log("This simulate a Lisp program and a interpreter");
+// console.log(interpreter("(/ 10 (- 3 3))")); // Should throw: Division by zero
