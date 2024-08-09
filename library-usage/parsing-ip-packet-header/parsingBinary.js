@@ -63,6 +63,7 @@ const Bit = new Parser((parserState) => {
     return parserState;
   }
   const byteOffset = Math.floor(parserState.index / 8);
+  console.log("Parser state index", parserState.index);
 
   if (byteOffset >= parserState.target.byteLength) {
     return updateParserError(parserState, `Bit: Unexpected end of input`);
@@ -121,6 +122,11 @@ const One = new Parser((parserState) => {
   return updateParserState(parserState, parserState.index + 1, bit);
 });
 
+/**
+ *
+ * @param {*} n lenthg of bits to read
+ * @returns
+ */
 const Uint = (n) => {
   if (n < 1) {
     throw new Error(`Uint: n must be larger than 0, but we got ${n}`);
@@ -132,6 +138,10 @@ const Uint = (n) => {
 
   return sequenceOf(Array.from({ length: n }, () => Bit)).map((bits) => {
     return bits.reduce((acc, bit, i) => {
+      if (i > 2) {
+        console.log("bit", bit);
+      }
+      console.log("acc", acc);
       return acc + Number(BigInt(bit) << BigInt(n - 1 - i));
     }, 0);
   });
@@ -228,6 +238,11 @@ const dataView = new DataView(data);
 // const res = parser.run(dataView);
 // console.log(res);
 
+// Interpret 16 bit number
+const acummulate2Byte = Uint(16);
+const r = acummulate2Byte.run(dataView);
+console.log(r);
+
 // Example 2 parsing binary file that contains ip header
 const tag = (type) => (value) => ({ type, value });
 const parser2 = sequenceOf([
@@ -264,6 +279,5 @@ const relativePath =
 const file = fs.readFileSync(relativePath + "packet.bin").buffer;
 const dataView2 = new DataView(file);
 
-const res = parser2.run(dataView2);
-
-console.log(res);
+// const res = parser2.run(dataView2);
+// console.log(res);
